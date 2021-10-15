@@ -1,11 +1,11 @@
 variable "awsprops" {
-    type = "map"
-    default = {
+  type = map
+  default = {
     region = "us-east-1"
-    vpc = "vpc-5234832d"
-    ami = "ami-0c1bea58988a989155"
+    vpc = "vpc-0aa2624fc13327733"
+    ami = "ami-09e67e426f25ce0d7"
     itype = "t2.micro"
-    subnet = "subnet-81896c8e"
+    subnet = "subnet-0cc17020d7f3eb7b8"
     publicip = true
     keyname = "myseckey"
     secgroupname = "IAC-Sec-Group"
@@ -32,7 +32,7 @@ resource "aws_security_group" "project-iac-sg" {
   // To Allow Port 80 Transport
   ingress {
     from_port = 80
-    protocol = ""
+    protocol = "tcp"
     to_port = 80
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -49,7 +49,6 @@ resource "aws_security_group" "project-iac-sg" {
   }
 }
 
-
 resource "aws_instance" "project-iac" {
   ami = lookup(var.awsprops, "ami")
   instance_type = lookup(var.awsprops, "itype")
@@ -57,16 +56,16 @@ resource "aws_instance" "project-iac" {
   associate_public_ip_address = lookup(var.awsprops, "publicip")
   key_name = lookup(var.awsprops, "keyname")
 
-
   vpc_security_group_ids = [
     aws_security_group.project-iac-sg.id
   ]
+
   root_block_device {
-    delete_on_termination = true
-    iops = 150
-    volume_size = 50
+    delete_on_termination = "true"
+    volume_size = "8"
     volume_type = "gp2"
   }
+
   tags = {
     Name ="SERVER01"
     Environment = "DEV"
@@ -76,7 +75,6 @@ resource "aws_instance" "project-iac" {
 
   depends_on = [ aws_security_group.project-iac-sg ]
 }
-
 
 output "ec2instance" {
   value = aws_instance.project-iac.public_ip

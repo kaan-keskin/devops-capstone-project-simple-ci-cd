@@ -80,7 +80,7 @@ In order to connect to AWS. Terraform has to successfully authenticate. It is do
 
 Sample usage of these API Keys in a terraform configuration.
 
-```yaml
+```hcl
 provider "aws" {
   region     = "us-east-1" # US East - N. Virginia
   access_key = "my-access-key"
@@ -162,7 +162,7 @@ Here is the sample Terraform Configuration file saved with **\*.tf** extension
 
 The following file presumes that you are using the AWS Config profile. So it refers to the **profile: default** for the authentication.
 
-```json
+```hcl
 provider "aws" {
   profile    = "default"
   region     = "us-east-1"
@@ -181,14 +181,14 @@ Terraform configuration file would ideally have lot of elements known as blocks 
 
 This is a Syntax of how Terraform Configuration file block is formatted:
 
-```json
+```hcl
 <BLOCK TYPE> "<BLOCK NAME>" "<BLOCK LABEL>" {
   # Block body
   <IDENTIFIER> = <EXPRESSION> # Argument
 }
 ```
 
-There are a lot of BLOCK_TYPE available in Terraform and the resource is primary and all others are to support building that specified resource.
+There are a lot of BLOCK_TYPE's available in Terraform and the resource is primary and all others are to support building that specified resource.
 
 Some of the Terraform blocks (elements) and their purpose is given below:
 
@@ -200,4 +200,65 @@ Some of the Terraform blocks (elements) and their purpose is given below:
 - **module** – A module is a container for multiple resources that are used together.
 - **data** – To Collect data from the remote provider and save it as a data source.
 
+### Terraform EC2: Create AWS EC2 instance with Terraform
+
+As we have crossed all the sections of basic and prerequisites. We are now ready to move forward to the practical application of Terraform and we are going to create an EC2 instance with terraform.
+
+**Step1: Creating a Configuration file for Terraform AWS**
+
+The Terraform configuration file to create EC2 instance is located in: '**./terraform/main.tf**' in this repository.
+
+**Step2: Initialize Terraform**
+
+Once we have saved the File in the newly created directory, we need to initialize terraform with **'terraform init'** command.
+
+```shell
+$ terraform init
+```
+
+<img src=".\images\terraform-init.png" style="width:75%; height: 75%;"/>
+
+**Step3: Pre-Validate the change – A pilot run**
+
+Once the Initialization completed, you can execute the '**terraform plan**' command to see what changes are going to be made.
+
+Execute the '**terraform plan**' command and it would present some detailed info on what changes are going to be made into your AWS infra.
+
+<img src=".\images\terraform-plan.png" style="width:75%; height: 75%;"/>
+
+the **-out tfplan** is to save the result given by plan so that we can refer it later and apply it as it is without any modification.
+
+```shell
+$ terraform plan -out tfplan
+```
+
+It also guarantees that what we see in the planning phase would be applied when we go for committing it.
+
+You can verify the outputs shown and what resources are going to be created or destroyed. Sometimes while doing a modification to the existing resources, Terraform would have to destroy the resource first and recreate it. In such cases, It would mention that it is going to destroy.
+
+You should always look for the + and - signs on the terraform plan output.
+
+Besides that, you should also monitor this line every time you run this command to make sure that no unintended result happen.
+
+**Step4: Go ahead and Apply it with Terraform apply**
+
+When you execute the '**terraform apply**' command the changes would be applied to the AWS Infra.
+
+If '**terraform plan**' is a trial run and test,  '**terraform apply**' is real-time and production!
+
+Since we have saved the plan output to a file named **tfplan** to guarantee the changes. We need to use this file as an input while running the apply command.
+
+```shell
+$ terraform apply "tfplan"
+```
+
+<img src=".\images\terraform-apply.png" style="width:75%; height: 75%;"/>
+
+So we have Successfully created an EC2 instance and a Security Group and logged into the Server.
+
+Since this is a test instance, I want to destroy the resources I have created and I can do it by executing '**terraform destroy**' command.
+
+```shell
+$ terraform destroy
+```
 
