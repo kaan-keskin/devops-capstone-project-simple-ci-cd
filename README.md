@@ -544,6 +544,14 @@ After the playbook finishes running successfully, you can check your AWS console
 
 After EC2 instance created, we can easily install different services/applications in to the EC2 instance with Ansible. 
 
+You can ping created EC' nstance with Ansible ping module:
+
+```shell
+$ ansible webservers -i hosts -m ping -u ubuntu
+```
+
+<img src=".\images\ansible-ping-webservers.png" style="width:75%; height: 75%;"/>
+
 We will install Apache2 as a service with given playbook:
 
 ```yaml
@@ -672,6 +680,10 @@ $ ansible-playbook -i hosts ansible_ubuntu_docker_install.yml
 ```
 
 <img src=".\images\ansible-ubuntu-docker-install.png" style="width:100%; height: 100%;"/>
+
+We can also check status of the Docker service directly from the created EC2 instance:
+
+<img src=".\images\amazon-aws-ec2-console-docker-service.png" style="width:100%; height: 100%;"/>
 
 ### Run Jenkins Container with Ansible
 
