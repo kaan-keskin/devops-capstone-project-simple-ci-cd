@@ -31,8 +31,8 @@ The objective is to implement iterative deployments, continuous innovation, and 
 **The following tools must be used:**
 
 - Ansible
-- Docker
 - AWS EC2
+- Docker
 - Git
 - Jenkins
 - Terraform
@@ -50,7 +50,7 @@ In order to connect to AWS, Terraform or Ansible has to successfully authenticat
 
 Login to AWS Console, in the services, go to IAM and perform the following steps.
 
-<img src=".\images\amazon-aws-iam-1.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-iam-1.png" style="width:100%; height: 100%;"/>
 
 1. Add new user and key in the User Name:
 
@@ -82,6 +82,18 @@ Secret access key: W2YY----KtHRj------------QvHgGUa----tqDU
 > **Note**: Once the Access Key ID and Secret Access Key is created you can download and save them somewhere safe and if you lost it you cannot recover (or) re-download it. You would have to create a new API key.
 
 > The best practice is to keep changing the API Access Key and recreating it. The older your API keys are the prone they are to Malicious attacks. So you should keep updating the API key and should not use the Same API key for a long period of time.
+
+### Create Key pairs
+
+A key pair, consisting of a public key and a private key, is a set of security credentials that you use to prove your identity when connecting to an Amazon EC2 instance. Amazon EC2 stores the public key on your instance, and you store the private key. For Linux instances, the private key allows you to securely SSH into your instance. Anyone who possesses your private key can connect to your instances, so it's important that you store your private key in a secure place. 
+
+Create Key pairs named "myseckey" on the AWS Web Console:
+
+<img src=".\images\amazon-aws-key-pair-create.png" style="width:75%; height: 75%;"/>
+
+The private key file is automatically downloaded by your browser. The base file name is the name that you specified as the name of your key pair, and the file name extension is determined by the file format that you chose. Save the private key file in a safe place.
+
+<img src=".\images\amazon-aws-key-pairs.png" style="width:100%; height: 100%;"/>
 
 ## Terraform AWS : Using Terraform to Create EC2 Instances
 
@@ -250,11 +262,11 @@ So we have successfully created an EC2 instance and a Security Group and logged 
 
 You can see newly created EC2 instance on AWS web console with all properties defined in '**main.tf**' file.
 
-<img src=".\images\amazon-aws-ec2-terraform-apply.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-ec2-terraform-apply.png" style="width:100%; height: 100%;"/>
 
-<img src=".\images\amazon-aws-volumes-terraform-apply.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-volumes-terraform-apply.png" style="width:100%; height: 100%;"/>
 
-<img src=".\images\amazon-aws-security-groups-terraform-apply.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-security-groups-terraform-apply.png" style="width:100%; height: 100%;"/>
 
 You can destroy the created resources by executing '**terraform destroy**' command.
 
@@ -274,15 +286,322 @@ Customers who use Ansible playbooks typically deploy periodic changes manually. 
 
 You can build almost any sort of environment of AWS no matter how simple or complex it can get. So, in order not to overwhelm you with so much information, we’ll create one EC2 instance from scratch. 
 
-We’re going to do the following:
-
-- Make an AWS account
-- Create an IAM role and obtain your access and secret keys
-- Generate a public/private key pair.
+We’re going to do generate a public/private key pair.
 
 Then, using Ansible, we’ll create a playbook that will:
 
 - Create a security group for the environment and add the appropriate rules
 - Launch an EC2 instance based on the type and region
 
+Another playbook will be used to shut down or destroy the environment.
+
+### Storing your keys in Ansible vault
+
+We’ll need to store the AWS keys. Since they are sensitive data, we should use Ansible vault for this:
+
+```shell
+$ ansible-vault create aws_keys.yml
+```
+
+Once open, add the following to it:
+
+```shell
+aws_access_key: AKIA----------U3YZNC
+aws_secret_key: W2YY----KtHRj------------QvHgGUa----tqDU
+```
+
+Once you save the file, all the content will be encrypted. Let’s check that:
+
+<img src=".\images\ansible-vault-create.png" style="width:75%; height: 75%;"/>
+
+### Setting up the hosts file
+
+Next, we need to create/update the hosts file to handle our new EC2 instance that yet to be created. Adding the following to ./hosts file:
+
+```shell
+[local]
+localhost
+```
+
+### Building the EC2 instance
+
+OK, now let’s edit our playbook file. Create a new file called aws_provisioning.yml and the following:
+
+```yaml
+---
+- hosts: local
+  connection: local
+  gather_facts: False
+  vars:
+    instance_type: t2.micro
+    security_group: webservers_sg
+    image: ami-09e67e426f25ce0d7
+    keypair: myseckey 
+    region: us-east-1
+    count: 1
+  vars_files:
+    - aws_keys.yml
+```
+
+Let’s have a quick look at what each line of the file does:
+
+First, you’re limiting the scope of the playbook to the local hosts group. It contains localhost and this is the way Ansible will work with EC2 instances. Behind the scenes, Ansible connects to Python boto on the local machine and use to establish connection with the AWS API and issue the necessary commands.
+
+We need to set the connection to local so that Ansible won’t attempt to establish an SSH connection session with localhost unnecessarily. 
+
+The variables section contains the optinos we intend to use with our instance:
+
+- The instace type is t2.micro, this is suitable for our test environment. It’s also eligible for the free tier, in which Amazon will not charge you for some services (including selected EC2 instance types) for a period of 1 year.
+
+- Then we specify the name of the security group that Ansible will create for us. A security group is like a virtual firewall that must be created for your EC2 instances. If you already have one created, you can associate it with the new EC2 instance. In our case, we’ll be creating a new one from scratch.
+
+- The image specifies the AMI (Amazon Machine Image). AMI’s are like templates that are used to spawn machine instances. If you’ve used Vagrant before, they serve the same purpose as the box. You can even create and use your own AMI images. Amazon provides a list of its own AMI’s that can be found here: https://us-west-2.console.aws.amazon.com/ec2/v2/home?region=us-west-2#LaunchInstanceWizard. Notice that it depends on your region of choice.
+
+- They keypair refers to the name of the public/private key pair that you created earlier.
+
+- The region is the region of your choice. If you receive huge volumes of traffic, it’s advised that you choose a region that it geographically closest to where most of your customers are located. This is mainly to reduce network latency and enhance performance. However, if you are creating a lab, or if you are not expecting extremely high traffic volume, then you can choose the region based on the best pricing rates. Yes, each region may have different rates than the other for the AWS services you consume.
+
+- The count variable is the number of instances you need to launch. All of them will share the same settings. In our case, we’ll only going to create one instance.
+
+
+**Creating a security group:**
+
+Now that we’ve defined the settings that will be used in the playbook, let’s start adding the tasks:
+
+```yaml
+  tasks:
+    - name: Create a security group
+      ec2_group:
+        name: "{{ security_group }}"
+        description: The webservers security group
+        region: "{{ region }}"
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+
+```
+
+Our first task will be to create a “Security Group” for our instance. As mentioned, a security group is nothing but a firewall that will selectively allow/deny traffic from and to your instances.
+
+We use the **ec2_group** module provided natively by Ansible. The module needs a name for the security group. We passed the security_group variable. It also needs a region and a description.
+
+Now comes the main part of the task: the rules. AWS security groups access two types of rules: incoming (ingress) and outgoing (engress). We’re more interested in what arrrives at our instance rather than what leaves it. 
+
+So, we instruct our security group to allow:
+
+- SSH on port 22 (that’s the only way you can remotely access your instance over the network). The security group can also filter the source IP address from which the traffic is originating. This is controlled by the cidr_ip option. AWS recommends that you set that to the IP or the IP range of the machine(s) you will be using to access the instance. If want to, you can leave it at 0.0.0.0/0, which means accept traffic from anywhere in the world.
+
+- The web traffic that normally arrives at port 80. We also enabled port 443; as we will be adding HTTPS support later.
+
+The rules_engress controls the network traffic leaving your instance to the outside world. We are not placing any filters on this.
+
+**Creating and launching the EC2 instance:**
+
+After creating the security group, our playbook may go ahead and create the instance itself. Add the following to the playbook file:
+
+```yaml
+    - name: Launch the new EC2 Instance
+      ec2:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        group: "{{ security_group }}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ image }}"
+        wait: true 
+        region: "{{ region }}"
+        keypair: "{{ keypair }}"
+        count: "{{count}}"
+      register: ec2
+
+```
+
+Nothing new here. We’ve just used a different Ansible module, **ec2**. Then, we passed the necessary parameters that it will need to create our instance:
+
+- The necessary credential keys.
+- The security group name.
+- The instance type.
+- The image AMI id.
+- The wait parameter instructs the Ansible to wait for the instance to get created before reporting that the task is complete.
+- Then the region, keypair, and count.
+- Notice that the end of the task, we register a variable called ec2. We’ll further need the information inside this variable (like the instance id, the public IP and so on) later on. 
+
+**Adding the newly created instance to the hosts file:**
+
+Once the instance is created, we’ll need to be able to contact it. The following task will add the instance(s) to a group called webservers.
+
+```yaml
+    - name: Add the newly created host so that we can further contact it
+      add_host:
+        name: "{{ item.public_ip }}"
+        groups: webservers
+      with_items: "{{ ec2.instances }}"
+```
+
+The add_host module allows you to add one or more hosts to a group. The group will be created if it does not already exist. In our case, we are adding the instance to webserversgroup.
+
+Notice the use of with_items. It takes the instances list in the ec2 variable that we created in the previous task. This is necessary if you are creating more than one instance so that Ansible will loop through all of them. Each instance can be referred to by item. So, item_public_ip will get the public IP address assigned by AWS to that specific instance in the list.
+
+**Tag the instance:**
+
+AWS allows you to add tags to your instances. A tag consists of a name and a value. We will need to add at least one tag to our instance specifying its name. The reason we need this tag is to be able to identify our instances later on when we need to perform additional actions against them, including termination. You can add the following task to the playbook to tag the instance:
+
+```yaml
+    - name: Add tag to Instance(s)
+      ec2_tag:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        resource: "{{ item.id }}" 
+        region: "{{ region }}" 
+        state: "present"
+      with_items: "{{ ec2.instances }}"
+      args:
+        tags:
+          Type: webserver
+```
+
+The task is pretty simple, use the **ec2_tag** module and specify the tags in the args parameter.
+
+**Finishing up instance creation:**
+
+We need to ensure that the creation process is complete and that the SSH daemon is ready to receive connections. This can be done with the following task:
+
+```yaml
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_ip }}"
+        port: 22 
+        state: started 
+      with_items: "{{ ec2.instances }}"
+```
+
+Here, we are making use of the **wait_for** Ansible module, which does nothing but pause playbook execution till a specific condition is met. In our case, it’s port 22 (default SSH port) on our host coming up and accepting connections.
+
+**Running the playbook:**
+
+Before running the playbook, we need to configure the following:
+
+- The private key that Ansible will use to connect to the host.
+- Avoid displaying the host identification dialog that SSH shows whenever you want to connect to a host for the first time. This is necessary if you want to run the playbook unattended.
+
+To do this, we need to override the default Ansible’s configuration file, Ansible.cfg. It is located by default in '**/etc/ansible**'. But, placing a file with the same name in the working directory will override the default one. Create a new file called **ansible.cfg** in the current working directory and add the following:
+
+```yaml
+[defaults]
+host_key_checking = False
+private_key_file = myseckey.pem
+```
+
+Now, we’re ready to run the playbook by issuing the following command:
+
+```shell
+$ ansible-playbook -i hosts --ask-vault-pass aws_provisioning.yml
+```
+
+<img src=".\images\ansible-playbook-aws-provisioning.png" style="width:100%; height: 100%;"/>
+
+After the playbook finishes running successfully, you can check your AWS console for a new EC2 instance created and assigned the correct security group.
+
+<img src=".\images\amazon-aws-ansible-playbook-provisioning.png" style="width:100%; height: 100%;"/>
+
+After EC2 instance created, we will install different services/applications in to the EC2 instance. We will start this process with Apache2 with given playbook:
+
+```yaml
+- hosts: webservers
+  remote_user: ubuntu
+  become: yes
+  gather_facts: yes
+  pre_tasks:
+    - name: 'Update system'
+      raw: 'sudo apt-get update' 
+    - name: 'Install Python'
+      raw: 'sudo apt-get -y install python3'
+  tasks:
+    - name: Install Apache2
+      apt:
+        name: apache2
+        state: present
+    - name: Apache2 Service
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+```
+
+```shell
+$ ansible-playbook -i hosts aws_apache_deploy.yml
+```
+
+<img src=".\images\ansible-playbook-aws-apache-deploy.png" style="width:100%; height: 100%;"/>
+
+Further, you can fire up your browser and naviagate to http://ec2-ip, you should see the default Ubuntu page, where ec2-ip is the public IP address that got assigned to your instance by AWS.
+
+<img src=".\images\apache2-default-page.png" style="width:100%; height: 100%;"/>
+
+**Terminating the instance:**
+
+Unless you are still in the free-tier period offered by Amazon, which lasts for 1 year, you are going to be charged for running the instance on a time basis. So, if you don’t need the instance for the time being or at all, you should stop or terminate it.
+
+The difference between stopping and terminating the instance:
+
+Stopping the instance is like issuing the shutdown command. You can start it up again without losing any data. You will not be charged for a stopped instance. You may be charged - however - for other resources related to the intance like storage.
+
+The following playbook is very simple: it will grab all the instances by a specific tag and terminate them. Create a new file called **ec2_down.yml** and add the following:
+
+```yaml
+- hosts: local
+  connection: local
+  vars:
+    region: us-east-1
+  vars_files:
+    - aws_keys.yml
+  tasks:
+    - name: Gather EC2 Facts
+      ec2_instance_facts:
+        region: "{{ region }}"
+        filters:
+          "tag:Type": "webserver"
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+      register: ec2
+    - debug: var=ec2
+    - name: Terminate EC2 Instance(s)
+      ec2:
+        instance_ids: '{{ item.instance_id }}'
+        state: absent
+        region: "{{ region }}"
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+      with_items: "{{ ec2.instances }}"
+```
+
+The playbook starts with declaring the required variables that will be used throughout the file, then it defines two tasks:
+
+- ec2_instance_facts: This task is responsible for collecting the instance facts. Don’t confuse this with the traditional fact-gathering that Ansible performs by default when it executes any playbook. Here, Ansible is collecting facts that are related to the presence of this instance on the AWS platform. Facts like the tags that were assigned to the instance are collected, which is what interests us.
+
+- ec2: Again, we use the ec2 module, but this time to terminate the instance. The state parameter can take other values than absent depending on your requirements. For example, stopped will just shut down the instance, restarted will reboot it, and running will ensure that it is running (it will start the machine if stopped).
+
+```shell
+$ ansible-playbook -i hosts --ask-vault-pass ec2_down.yml
+```
+
+<img src=".\images\ansible-playbook-ec2-down.png" style="width:100%; height: 100%;"/>
+
+You can see terminated EC2 instances on AWS web console:
+
+<img src=".\images\amazon-aws-instances-ansible-playbook-down.png" style="width:100%; height: 100%;"/>
 

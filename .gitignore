@@ -1,7 +1,11 @@
 
-# Exclude the Terraform initial folder.
+# Terraform
 .terraform/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
 tfplan
+
+# Ansible
+aws_keys.yml
+myseckey.pem
