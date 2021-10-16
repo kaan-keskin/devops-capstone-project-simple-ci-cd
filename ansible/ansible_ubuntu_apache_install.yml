@@ -1,27 +1,22 @@
 
 ---
-- hosts: webservers
-  remote_user: ubuntu
+- name: Install Apache2 Webserver
   become: yes
   gather_facts: yes
+  hosts: webservers
   pre_tasks:
-
     - name: 'Update system'
       raw: 'sudo apt-get update' 
-
     - name: 'Install Python'
       raw: 'sudo apt-get -y install python3'
-
+  remote_user: ubuntu
   tasks:
-
     - name: Install Apache2
       apt:
         name: apache2
         state: present
-        
     - name: Apache2 Service
       service:
+        enabled: yes
         name: apache2
         state: started
-        enabled: yes
-

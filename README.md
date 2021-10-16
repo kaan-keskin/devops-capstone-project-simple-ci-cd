@@ -28,13 +28,14 @@ The objective is to implement iterative deployments, continuous innovation, and 
 - Expose the application on the respective ports so that the user can access the deployed application.
 - Remove container stack after completing the job.
 
-**The following tools must be used:**
+**The following tools will be used:**
 
 - Ansible
 - AWS EC2
 - Docker
 - Git
 - Jenkins
+- Maven
 - Terraform
 
 **The following things to be kept in check:**
@@ -328,17 +329,18 @@ localhost
 OK, now let’s edit our playbook file. Create a new file called aws_provisioning.yml and the following:
 
 ```yaml
----
-- hosts: local
+- name: Create a Sandbox Instance.
+  hosts: local
   connection: local
   gather_facts: False
   vars:
-    instance_type: t2.micro
-    security_group: webservers_sg
+    ansible_host_group: webservers
+    count: 1
     image: ami-09e67e426f25ce0d7
+    instance_type: t2.micro
     keypair: myseckey 
     region: us-east-1
-    count: 1
+    security_group: webservers_sg
   vars_files:
     - aws_keys.yml
 ```
@@ -363,7 +365,6 @@ The variables section contains the optinos we intend to use with our instance:
 
 - The count variable is the number of instances you need to launch. All of them will share the same settings. In our case, we’ll only going to create one instance.
 
-
 **Creating a security group:**
 
 Now that we’ve defined the settings that will be used in the playbook, let’s start adding the tasks:
@@ -372,11 +373,11 @@ Now that we’ve defined the settings that will be used in the playbook, let’s
   tasks:
     - name: Create a security group
       ec2_group:
-        name: "{{ security_group }}"
-        description: The webservers security group
-        region: "{{ region }}"
         aws_access_key: "{{ aws_access_key }}"
         aws_secret_key: "{{ aws_secret_key }}"
+        description: The webservers security group
+        name: "{{ security_group }}"
+        region: "{{ region }}"
         rules:
           - proto: tcp
             from_port: 22
@@ -393,12 +394,14 @@ Now that we’ve defined the settings that will be used in the playbook, let’s
         rules_egress:
           - proto: all
             cidr_ip: 0.0.0.0/0
-
+        state: present
 ```
 
 Our first task will be to create a “Security Group” for our instance. As mentioned, a security group is nothing but a firewall that will selectively allow/deny traffic from and to your instances.
 
 We use the **ec2_group** module provided natively by Ansible. The module needs a name for the security group. We passed the security_group variable. It also needs a region and a description.
+
+Ansible **ec2_group** Module Documentation: https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_group_module.html
 
 Now comes the main part of the task: the rules. AWS security groups access two types of rules: incoming (ingress) and outgoing (engress). We’re more interested in what arrrives at our instance rather than what leaves it. 
 
@@ -419,15 +422,18 @@ After creating the security group, our playbook may go ahead and create the inst
       ec2:
         aws_access_key: "{{ aws_access_key }}"
         aws_secret_key: "{{ aws_secret_key }}"
-        group: "{{ security_group }}"
-        instance_type: "{{ instance_type }}"
-        image: "{{ image }}"
-        wait: true 
-        region: "{{ region }}"
-        keypair: "{{ keypair }}"
         count: "{{count}}"
+        group: "{{ security_group }}"
+        image: "{{ image }}"
+        instance_type: "{{ instance_type }}"
+        key_name: "{{ keypair }}"
+        monitoring: yes
+        region: "{{ region }}"
+        state: present
+        termination_protection: no
+        wait: true
+        wait_timeout: 320
       register: ec2
-
 ```
 
 Nothing new here. We’ve just used a different Ansible module, **ec2**. Then, we passed the necessary parameters that it will need to create our instance:
@@ -440,6 +446,8 @@ Nothing new here. We’ve just used a different Ansible module, **ec2**. Then, w
 - Then the region, keypair, and count.
 - Notice that the end of the task, we register a variable called ec2. We’ll further need the information inside this variable (like the instance id, the public IP and so on) later on. 
 
+Ansible **ec2** Module Documentation: https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_module.html
+
 **Adding the newly created instance to the hosts file:**
 
 Once the instance is created, we’ll need to be able to contact it. The following task will add the instance(s) to a group called webservers.
@@ -447,14 +455,16 @@ Once the instance is created, we’ll need to be able to contact it. The followi
 ```yaml
     - name: Add the newly created host so that we can further contact it
       add_host:
+        groups: "{{ ansible_host_group }}"
         name: "{{ item.public_ip }}"
-        groups: webservers
       with_items: "{{ ec2.instances }}"
 ```
 
-The add_host module allows you to add one or more hosts to a group. The group will be created if it does not already exist. In our case, we are adding the instance to webserversgroup.
+The **add_host** module allows you to add one or more hosts to a group. The group will be created if it does not already exist. In our case, we are adding the instance to webserversgroup.
 
 Notice the use of with_items. It takes the instances list in the ec2 variable that we created in the previous task. This is necessary if you are creating more than one instance so that Ansible will loop through all of them. Each instance can be referred to by item. So, item_public_ip will get the public IP address assigned by AWS to that specific instance in the list.
+
+Ansible **add_host** Module Documentation: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/add_host_module.html
 
 **Tag the instance:**
 
@@ -465,16 +475,17 @@ AWS allows you to add tags to your instances. A tag consists of a name and a val
       ec2_tag:
         aws_access_key: "{{ aws_access_key }}"
         aws_secret_key: "{{ aws_secret_key }}"
-        resource: "{{ item.id }}" 
         region: "{{ region }}" 
+        resource: "{{ item.id }}" 
         state: "present"
-      with_items: "{{ ec2.instances }}"
-      args:
         tags:
           Type: webserver
+      with_items: "{{ ec2.instances }}"
 ```
 
 The task is pretty simple, use the **ec2_tag** module and specify the tags in the args parameter.
+
+Ansible **ec2_tag** Module Documentation: https://docs.ansible.com/ansible/latest/collections/amazon/aws/ec2_tag_module.html
 
 **Finishing up instance creation:**
 
@@ -483,13 +494,18 @@ We need to ensure that the creation process is complete and that the SSH daemon 
 ```yaml
     - name: Wait for SSH to come up
       wait_for:
+        connect_timeout: 5
+        delay: 60
         host: "{{ item.public_ip }}"
-        port: 22 
+        port: 22
         state: started 
+        timeout: 320
       with_items: "{{ ec2.instances }}"
 ```
 
 Here, we are making use of the **wait_for** Ansible module, which does nothing but pause playbook execution till a specific condition is met. In our case, it’s port 22 (default SSH port) on our host coming up and accepting connections.
+
+Ansible **wait_for** Module Documentation: https://docs.ansible.com/ansible/latest/collections/ansible/builtin/wait_for_module.html
 
 **Running the playbook:**
 
@@ -506,6 +522,12 @@ host_key_checking = False
 private_key_file = myseckey.pem
 ```
 
+You need to check file permissions for myseckey.pem.
+
+```shell
+$ sudo chmod 0600 myseckey.pem
+```
+
 Now, we’re ready to run the playbook by issuing the following command:
 
 ```shell
@@ -518,18 +540,23 @@ After the playbook finishes running successfully, you can check your AWS console
 
 <img src=".\images\amazon-aws-ansible-playbook-provisioning.png" style="width:100%; height: 100%;"/>
 
-After EC2 instance created, we will install different services/applications in to the EC2 instance. We will start this process with Apache2 with given playbook:
+**Test Drive:**
+
+After EC2 instance created, we can easily install different services/applications in to the EC2 instance with Ansible. 
+
+We will install Apache2 as a service with given playbook:
 
 ```yaml
-- hosts: webservers
-  remote_user: ubuntu
+- name: Install Apache2 Webserver
   become: yes
   gather_facts: yes
+  hosts: webservers
   pre_tasks:
     - name: 'Update system'
       raw: 'sudo apt-get update' 
     - name: 'Install Python'
       raw: 'sudo apt-get -y install python3'
+  remote_user: ubuntu
   tasks:
     - name: Install Apache2
       apt:
@@ -537,13 +564,13 @@ After EC2 instance created, we will install different services/applications in t
         state: present
     - name: Apache2 Service
       service:
+        enabled: yes
         name: apache2
         state: started
-        enabled: yes
 ```
 
 ```shell
-$ ansible-playbook -i hosts aws_apache_deploy.yml
+$ ansible-playbook -i hosts ansible_ubuntu_apache_install.yml
 ```
 
 <img src=".\images\ansible-playbook-aws-apache-deploy.png" style="width:100%; height: 100%;"/>
@@ -596,7 +623,7 @@ The playbook starts with declaring the required variables that will be used thro
 - ec2: Again, we use the ec2 module, but this time to terminate the instance. The state parameter can take other values than absent depending on your requirements. For example, stopped will just shut down the instance, restarted will reboot it, and running will ensure that it is running (it will start the machine if stopped).
 
 ```shell
-$ ansible-playbook -i hosts --ask-vault-pass ec2_down.yml
+$ ansible-playbook -i hosts --ask-vault-pass aws_ec2_down.yml
 ```
 
 <img src=".\images\ansible-playbook-ec2-down.png" style="width:100%; height: 100%;"/>
@@ -605,3 +632,80 @@ You can see terminated EC2 instances on AWS web console:
 
 <img src=".\images\amazon-aws-instances-ansible-playbook-down.png" style="width:100%; height: 100%;"/>
 
+## Deploy Jenkins with Docker and Ansible
+
+In the world of CI/CD, Jenkins is a popular tool for provisioning development/production environments as well as application deployment through pipeline flow. Still, sometimes, it gets overwhelming to maintain the application's status, and script reusability becomes harder as the project grows.
+
+To overcome this limitation, Ansible plays an integral part as a shell script executor, which enables Jenkins to execute the workflow of a process.
+
+### Install Docker with Ansible
+
+Use Ansible’s apt module to install the Docker engine as a system service:
+
+```yaml
+- name: Install Docker
+  become: yes
+  gather_facts: yes
+  hosts: webservers
+  remote_user: ubuntu
+  tasks:
+    - name: Update System
+      raw: 'sudo apt-get update'
+    - name: 'Install Required Tools and Libraries'
+      raw: 'sudo apt-get -y install python3-pip python3 apt-transport-https ca-certificates curl gnupg lsb-release'
+    - name: Add Docker Group
+      group: name=docker state=present
+    - name: Add Docker Signing Key
+      raw: 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+    - name: Add Docker Repo
+      raw: 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null' 
+    - name: Update System
+      raw: 'sudo apt-get update' 
+    - name: Install Docker
+      raw: 'sudo apt-get -y install docker-ce docker-ce-cli containerd.io'
+    - name: Install docker-py
+      pip: name=docker-py
+```
+
+```shell
+$ ansible-playbook -i hosts ansible_ubuntu_docker_install.yml
+```
+
+<img src=".\images\ansible-ubuntu-docker-install.png" style="width:100%; height: 100%;"/>
+
+### Run Jenkins Container with Ansible
+
+The official Jenkins container image will install application files to **/var/jenkins_home** within the container, and this directory needs to be available outside the container, so use the Docker -v option to map the volume to, say, **/share/volumes/jenkins** on the host:
+
+```yaml
+- name: Run Jenkins Container
+  become: yes
+  gather_facts: yes
+  hosts: webservers
+  remote_user: ubuntu
+  tasks:
+  - name: Ensure jenkins directory on Docker host
+    file:
+      state: directory
+      owner: 1000
+      group: 1000
+      path: /share/jenkins
+  - name: Pull the latest official Jenkins Docker image
+    docker_image:
+      name: "jenkins:latest"
+  - name: Create a container from the jenkins docker image
+    docker_container:
+      name: "jenkins-server"
+      image: "jenkins"
+      ports:
+          - "8080:8080"
+          - "50000:50000"
+      volumes:
+          - "/share/jenkins:/var/jenkins_home"
+      state: present
+      recreate: no
+```
+
+```shell
+$ ansible-playbook -i hosts ansible_jenkins_container.yml
+```

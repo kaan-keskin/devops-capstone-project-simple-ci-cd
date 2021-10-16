@@ -1,0 +1,24 @@
+
+---
+- name: Install Docker
+  become: yes
+  gather_facts: yes
+  hosts: webservers
+  remote_user: ubuntu
+  tasks:
+    - name: Update System
+      raw: 'sudo apt-get update'
+    - name: 'Install Required Tools and Libraries'
+      raw: 'sudo apt-get -y install python3-pip python3 apt-transport-https ca-certificates curl gnupg lsb-release'
+    - name: Add Docker Group
+      group: name=docker state=present
+    - name: Add Docker Signing Key
+      raw: 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+    - name: Add Docker Repo
+      raw: 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null' 
+    - name: Update System
+      raw: 'sudo apt-get update' 
+    - name: Install Docker
+      raw: 'sudo apt-get -y install docker-ce docker-ce-cli containerd.io'
+    - name: Install docker-py
+      pip: name=docker-py

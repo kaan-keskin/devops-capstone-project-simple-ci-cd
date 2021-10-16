@@ -7,7 +7,6 @@
   vars_files:
     - aws_keys.yml
   tasks:
-
     - name: Gather EC2 Facts
       ec2_instance_facts:
         region: "{{ region }}"
@@ -16,9 +15,7 @@
         aws_access_key: "{{ aws_access_key }}"
         aws_secret_key: "{{ aws_secret_key }}"
       register: ec2
-
     - debug: var=ec2
-
     - name: Terminate EC2 Instance(s)
       ec2:
         instance_ids: '{{ item.instance_id }}'
