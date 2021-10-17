@@ -391,6 +391,14 @@ Now that we’ve defined the settings that will be used in the playbook, let’s
             from_port: 443
             to_port: 443
             cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 8080
+            to_port: 8080
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 50000
+            to_port: 50000
+            cidr_ip: 0.0.0.0/0
         rules_egress:
           - proto: all
             cidr_ip: 0.0.0.0/0
@@ -412,6 +420,10 @@ So, we instruct our security group to allow:
 - The web traffic that normally arrives at port 80. We also enabled port 443; as we will be adding HTTPS support later.
 
 The rules_engress controls the network traffic leaving your instance to the outside world. We are not placing any filters on this.
+
+After running this Ansible Playbook you can check Security Group's Inbound rules from AWS Web Console:
+
+<img src=".\images\amazon-aws-security-group-inbound-rules.png" style="width:75%; height: 75%;"/>
 
 **Creating and launching the EC2 instance:**
 
@@ -671,8 +683,14 @@ Use Ansible’s apt module to install the Docker engine as a system service:
       raw: 'sudo apt-get update' 
     - name: Install Docker
       raw: 'sudo apt-get -y install docker-ce docker-ce-cli containerd.io'
-    - name: Install docker-py
-      pip: name=docker-py
+    - name: Install docker
+      pip: name=docker
+    - name: Install Docker-Compose
+      raw: 'sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose' 
+    - name: Apply Executable Permissions to Docker-Compose Binary
+      raw: 'sudo chmod +x /usr/local/bin/docker-compose'
+    - name: Add your user to the docker group
+      raw: 'sudo usermod -aG docker $USER' 
 ```
 
 ```shell
@@ -687,7 +705,7 @@ We can also check status of the Docker service directly from the created EC2 ins
 
 ### Run Jenkins Container with Ansible
 
-The official Jenkins container image will install application files to **/var/jenkins_home** within the container, and this directory needs to be available outside the container, so use the Docker -v option to map the volume to, say, **/share/volumes/jenkins** on the host:
+Bitnami Docker Image for Jenkins will install application files to **/bitnami/jenkins** within the container, and this directory needs to be available outside the container, so use the Docker -v option to map the volume to, say, **/share/jenkins** on the host:
 
 ```yaml
 - name: Run Jenkins Container
@@ -696,28 +714,74 @@ The official Jenkins container image will install application files to **/var/je
   hosts: webservers
   remote_user: ubuntu
   tasks:
-  - name: Ensure jenkins directory on Docker host
+  - name: Ensure Jenkins directory on Docker host
     file:
       state: directory
-      owner: 1000
-      group: 1000
-      path: /share/jenkins
+      owner: '1001'
+      group: '1001'
+      path: '/share/jenkins'
   - name: Pull the latest official Jenkins Docker image
-    docker_image:
-      name: "jenkins:latest"
-  - name: Create a container from the jenkins docker image
-    docker_container:
-      name: "jenkins-server"
-      image: "jenkins"
-      ports:
-          - "8080:8080"
-          - "50000:50000"
-      volumes:
-          - "/share/jenkins:/var/jenkins_home"
+    community.docker.docker_image:
+      name: "bitnami/jenkins:2.303.1"
+      source: 'pull'
       state: present
-      recreate: no
+      timeout: 120
+  - name: Create a container from the Jenkins Docker image
+    community.docker.docker_container:
+      auto_remove: no
+      container_default_behavior: 'compatibility'
+      env:
+        JENKINS_USERNAME: 'admin'
+        JENKINS_PASSWORD: 'admin123'
+        JENKINS_EMAIL: 'admin@example.com'
+        JENKINS_HOME: '/bitnami/jenkins/home'
+        JENKINS_HTTP_PORT_NUMBER: '8080'
+        JENKINS_HTTPS_PORT_NUMBER: '8443'
+        JENKINS_EXTERNAL_HTTP_PORT_NUMBER: '8080'
+        JENKINS_EXTERNAL_HTTPS_PORT_NUMBER: '8443'
+        JENKINS_JNLP_PORT_NUMBER: '50000'
+        JENKINS_ENABLE_HTTPS: 'no'
+        JENKINS_SKIP_BOOTSTRAP: 'no'
+      exposed_ports:
+        - '8080'
+        - '8443'
+        - '50000'
+      hostname: 'jenkins2-master'
+      image: 'bitnami/jenkins:2.303.1'
+      keep_volumes: yes
+      name: 'jenkins2-master'
+      publish_all_ports: yes
+      published_ports:
+        - "8080:8080"
+        - "8443:8443"
+        - "50000:50000"
+      pull: yes
+      restart_policy: 'unless-stopped'
+      state: started
+      volumes:
+        - '/share/jenkins:/bitnami/jenkins:rw'
+        - '/var/run/docker.sock:/var/run/docker.sock'
 ```
 
+Ansible **docker_image** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_image_module.html
+
+Ansible **docker_container** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.html
+
+
+**Bitnami Docker Image for Jenkins** Documentation: https://hub.docker.com/r/bitnami/jenkins
+
 ```shell
+$ ansible-galaxy collection install community.docker
 $ ansible-playbook -i hosts ansible_jenkins_container.yml
 ```
+
+<img src=".\images\ansible-jenkins-master-container.png" style="width:100%; height: 100%;"/>
+
+Further, you can fire up your browser and naviagate to http://ec2-ip:8080, you should see the Jenkins homepage, where ec2-ip is the public IP address that got assigned to your instance by AWS.
+
+<img src=".\images\jenkins-initial-preparing.png" style="width:50%; height: 50%;"/>
+
+<img src=".\images\jenkins-login-screen.png" style="width:50%; height: 50%;"/>
+
+<img src=".\images\jenkins-homepage.png" style="width:100%; height: 100%;"/>
+

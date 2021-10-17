@@ -1,0 +1,56 @@
+
+---
+- name: Run Jenkins Container
+  become: yes
+  gather_facts: yes
+  hosts: webservers
+  remote_user: ubuntu
+  tasks:
+  - name: Ensure Jenkins directory on Docker host
+    file:
+      state: directory
+      owner: '1001'
+      group: '1001'
+      path: '/share/jenkins'
+  - name: Pull the latest official Jenkins Docker image
+    community.docker.docker_image:
+      name: "bitnami/jenkins:2.303.1"
+      source: 'pull'
+      state: present
+      timeout: 120
+  - name: Create a container from the Jenkins Docker image
+    community.docker.docker_container:
+      auto_remove: no
+      container_default_behavior: 'compatibility'
+      env:
+        JENKINS_USERNAME: 'admin'
+        JENKINS_PASSWORD: 'admin123'
+        JENKINS_EMAIL: 'admin@example.com'
+        JENKINS_HOME: '/bitnami/jenkins/home'
+        JENKINS_HTTP_PORT_NUMBER: '8080'
+        JENKINS_HTTPS_PORT_NUMBER: '8443'
+        JENKINS_EXTERNAL_HTTP_PORT_NUMBER: '8080'
+        JENKINS_EXTERNAL_HTTPS_PORT_NUMBER: '8443'
+        JENKINS_JNLP_PORT_NUMBER: '50000'
+        JENKINS_ENABLE_HTTPS: 'no'
+        JENKINS_SKIP_BOOTSTRAP: 'no'
+      exposed_ports:
+        - '8080'
+        - '8443'
+        - '50000'
+      hostname: 'jenkins2-master'
+      image: 'bitnami/jenkins:2.303.1'
+      keep_volumes: yes
+      name: 'jenkins2-master'
+      publish_all_ports: yes
+      published_ports:
+        - "8080:8080"
+        - "8443:8443"
+        - "50000:50000"
+      pull: yes
+      restart_policy: 'unless-stopped'
+      state: started
+      volumes:
+        - '/share/jenkins:/bitnami/jenkins:rw'
+        - '/var/run/docker.sock:/var/run/docker.sock'
+  
