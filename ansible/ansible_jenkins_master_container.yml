@@ -1,6 +1,6 @@
 
 ---
-- name: Run Jenkins Container
+- name: Run Jenkins Master Container
   become: yes
   gather_facts: yes
   hosts: webservers
@@ -35,6 +35,7 @@
         JENKINS_ENABLE_HTTPS: 'no'
         JENKINS_SKIP_BOOTSTRAP: 'no'
       exposed_ports:
+        - '2222'
         - '8080'
         - '8443'
         - '50000'
@@ -44,6 +45,7 @@
       name: 'jenkins2-master'
       publish_all_ports: yes
       published_ports:
+        - "2222:22"
         - "8080:8080"
         - "8443:8443"
         - "50000:50000"

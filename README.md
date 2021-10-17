@@ -556,7 +556,7 @@ After the playbook finishes running successfully, you can check your AWS console
 
 After EC2 instance created, we can easily install different services/applications in to the EC2 instance with Ansible. 
 
-You can ping created EC' nstance with Ansible ping module:
+You can ping created EC2 instance with Ansible ping module:
 
 ```shell
 $ ansible webservers -i hosts -m ping -u ubuntu
@@ -652,7 +652,7 @@ You can see terminated EC2 instances on AWS web console:
 
 <img src=".\images\amazon-aws-instances-ansible-playbook-down.png" style="width:100%; height: 100%;"/>
 
-## Deploy Jenkins with Docker and Ansible
+## Jenkins: Deploy Jenkins with Docker and Ansible
 
 In the world of CI/CD, Jenkins is a popular tool for provisioning development/production environments as well as application deployment through pipeline flow. Still, sometimes, it gets overwhelming to maintain the application's status, and script reusability becomes harder as the project grows.
 
@@ -703,12 +703,24 @@ We can also check status of the Docker service directly from the created EC2 ins
 
 <img src=".\images\amazon-aws-ec2-console-docker-service.png" style="width:100%; height: 100%;"/>
 
-### Run Jenkins Container with Ansible
+### Jenkins Multi-Node Architecture
+
+A Jenkins master comes with the basic installation of Jenkins, and in this configuration, the master handles all the tasks for your build system.
+
+If you are working on multiple projects, you may run multiple jobs on each project. Some projects need to run on some nodes, and in this process, we need to configure slaves. Jenkins slaves connect to the Jenkins master using the Java Network Launch Protocol.
+
+<img src=".\images\Jenkins-multi-node-architecture.jpg" style="width:50%; height: 50%;"/>
+
+The Jenkins master acts to schedule the jobs, assign slaves, and send builds to slaves to execute the jobs.
+
+It will also monitor the slave state (offline or online) and get back the build result responses from slaves and the display build results on the console output. The workload of building jobs is delegated to multiple slaves.
+
+### Jenkins Master Node with Ansible
 
 Bitnami Docker Image for Jenkins will install application files to **/bitnami/jenkins** within the container, and this directory needs to be available outside the container, so use the Docker -v option to map the volume to, say, **/share/jenkins** on the host:
 
 ```yaml
-- name: Run Jenkins Container
+- name: Run Jenkins Master Container
   become: yes
   gather_facts: yes
   hosts: webservers
@@ -743,6 +755,7 @@ Bitnami Docker Image for Jenkins will install application files to **/bitnami/je
         JENKINS_ENABLE_HTTPS: 'no'
         JENKINS_SKIP_BOOTSTRAP: 'no'
       exposed_ports:
+        - '2222'
         - '8080'
         - '8443'
         - '50000'
@@ -752,6 +765,7 @@ Bitnami Docker Image for Jenkins will install application files to **/bitnami/je
       name: 'jenkins2-master'
       publish_all_ports: yes
       published_ports:
+        - "2222:22"
         - "8080:8080"
         - "8443:8443"
         - "50000:50000"
@@ -766,7 +780,6 @@ Bitnami Docker Image for Jenkins will install application files to **/bitnami/je
 Ansible **docker_image** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_image_module.html
 
 Ansible **docker_container** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_container_module.html
-
 
 **Bitnami Docker Image for Jenkins** Documentation: https://hub.docker.com/r/bitnami/jenkins
 
@@ -784,4 +797,42 @@ Further, you can fire up your browser and naviagate to http://ec2-ip:8080, you s
 <img src=".\images\jenkins-login-screen.png" style="width:50%; height: 50%;"/>
 
 <img src=".\images\jenkins-homepage.png" style="width:100%; height: 100%;"/>
+
+### Configure Jenkins Master and Slave Nodes
+
+We will define new slave nodes to build the master-slave architecture. 
+As a first step, we will configure agents communication port as 50000.
+
+Find the **Configure Global Security** section on the **Manage Jenkins** page which is located in the left corner on the Jenkins dashboard.
+
+<img src=".\images\jenkins-manage-security.png" style="width:100%; height: 100%;"/>
+
+In this page scroll down to **Agents** section and set **TCP port for inbound agents** as **Fixed** with **50000** port.
+
+<img src=".\images\jenkins-manage-security-agents.png" style="width:50%; height: 50%;"/>
+
+Find the **Manage Nodes and Clouds** section on the **Manage Jenkins** page which is located in the left corner of the Jenkins dashboard.
+
+<img src=".\images\jenkins-manage-system-configuration.png" style="width:100%; height: 100%;"/>
+
+<img src=".\images\jenkins-nodes-page-master-only.png" style="width:100%; height: 100%;"/>
+
+Change **master** node configuration for controlled usage. 
+Select "**Only build jobs with label expressions matching this node**" option and define **master** as label.
+
+<img src=".\images\jenkins-manage-nodes-master-configuration.png" style="width:50%; height: 50%;"/>
+
+Then, select **New Node** which is located in the left corner of the **Manage Nodes and Clouds** page.
+Enter the name of the node in the **Node name** field, and then select **Permanent Agent**. 
+Initially, you will get only one option, “**Permanent Agent**”. 
+Once you have one or more slaves you will get the “**Copy Existing Node**” option.
+
+<img src=".\images\jenkins-manage-nodes-slave-name.png" style="width:100%; height: 100%;"/>
+
+Provide name, number of executors, root directory path, label, usage, and launch method, as
+given below:
+
+<img src=".\images\jenkins-manage-nodes-slave-configuration.png" style="width:50%; height: 50%;"/>
+
+
 
