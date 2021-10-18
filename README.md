@@ -1246,26 +1246,25 @@ In this pipeline we will implement these steps:
 - Publish image to Docker Hub
 - Cleanup
 
-```Jenkinsfile
-pipeline {  
-	agent any
- 	environment {		
-    	name = 'keskinkaan/gs-spring-boot-docker'
-    	tag = 'latest'       
-    	containerName = 'gs-spring-boot-docker'
-		deploy = false	
-	}
- 	stages {
-		stage('GitHub Checkout') {
-        	steps {             
-				git branch: 'main', url: 'https://github.com/kaan-keskin/devops-capstone-project-simple-ci-cd'            
-          	}
+```Groovy
+pipeline {
+    agent any
+    environment {
+        name = 'keskinkaan/gs-spring-boot-docker'
+        tag = 'latest'
+        deploy = false
+    }
+    stages {
+        stage('GitHub Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/kaan-keskin/devops-capstone-project-simple-ci-cd'
+            }
         }
-	 	stage('Execute Maven Package (Build and Test Steps Included)') {
-        	steps {
-            	sh 'mvn -f ./springboot/pom.xml clean package'             
-          	}
-			post{
+        stage('Execute Maven Package (Build and Test Steps Included)') {
+            steps {
+                sh 'mvn -f ./springboot/pom.xml clean package'
+            }
+            post {
                 success {
                     script {
                         env.deploy = true
@@ -1276,33 +1275,33 @@ pipeline {
                 }
             }
         }
-  		stage('Docker Build and Tag') {
-	   		when {
-            	expression {
-                	return env.deploy
-                }
-            }
-        	steps {              
-            	sh 'docker build -t keskinkaan/gs-spring-boot-docker:latest -f ./springboot/Dockerfile .' 
-        	}
-        }
-  		stage('Publish image to Docker Hub') {
-        	when {
+        stage('Docker Build and Tag') {
+            when {
                 expression {
                     return env.deploy
                 }
             }
             steps {
-				sh 'docker push keskinkaan/gs-spring-boot-docker:latest'                  
-          	}
+                sh 'docker build -t ${name}:${tag} -f ./springboot/Dockerfile .'
+            }
+        }
+        stage('Publish image to Docker Hub') {
+            when {
+                expression {
+                    return env.deploy
+                }
+            }
+            steps {
+                sh 'docker push ${name}:${tag}'
+            }
         }
     }
-   	post {
+    post {
         success {
-            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+            sh "docker rmi -f ${name}:${tag}"
         }
         failure {
-            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+            sh "docker rmi -f ${name}:${tag}"
         }
     }
 }
@@ -1318,4 +1317,68 @@ In the Jenkins job creation page follow these steps:
 
 <img src=".\images\jenkins-spring-demo-ci-configuration-2.png" style="width:100%; height:100%;"/>
 
+### Create Continuous Deployment Pipeline on Jenkins
+
+We are going to create our **Continuous Deployment (CD) Pipeline** for this simple Spring Boot application.
+Now, create new job named "**spring-boot-demo-cd**" as **Pipeline**:
+
+<img src=".\images\jenkins-job-demo-cd-name.png" style="width:100%; height:100%;"/>
+
+We use simple Continuous Deployment pipeline script for our Spring Boot application.
+
+In this pipeline we will implement these steps:
+- Stop Docker container
+- Remove old Docker container and image
+- Pull latest image from Docker Hub
+- Run new Docker container
+
+```Groovy
+pipeline {
+    agent any
+    environment {
+        name = 'keskinkaan/gs-spring-boot-docker'
+        tag = 'latest'
+        containerName = 'gs-spring-boot-docker'
+    }
+    stages {
+        stage('Stop Docker container') {
+            steps {
+                sh 'docker stop ${containerName}'
+            }
+        }
+        stage('Remove old Docker container and image') {
+            steps {
+                sh 'docker rm ${containerName}'
+                sh 'docker rmi ${name}:${tag}'
+            }
+        }
+        stage('Pull latest image from Docker Hub') {
+            steps {
+                sh 'docker pull ${name}:${tag}'
+            }
+        }
+        stage('Run new Docker container') {
+            steps {
+                sh 'docker run -d -p 8080:8080 --name ${containerName} ${name}:${tag}'
+            }
+        }
+    }
+}
+```
+
+## Conclusion
+
+### Advantages and USPs
+
+- Though we have been using jenkins pipeline for a while, the tooling that we have been using have been constrained to the agents. By having Docker available on all our agents, we can have full control of all the tools. 
+- Now we could use tools with specific versions in our pipeline so that they are not mandated by others.
+- If someone else has to install all the tools on our agents, this can be bypassed as now we can dynamically bring in the tools that we need at runtime.
+- Gives a chance to experiment with tools without having a long term commitment to those tools.
+- The docker agents are ephemeral in nature which means they are only accessed when triggered. 
+- With docker agents, we could have isolated execution environments. Eg one in Java 8 and other in Java 11.
+- We can better utilise resources as we are using containerized solution and not entire VM.
+
+### Extensions 
+- Agents could be scaled dynamically with the ports which Docker uses by using Docker Plugin as shown here and then using the Cloud feature with Docker and provide the host details with image info so that the instances could scale.
+- Another way to dynamically scale the agents is by using Kubernetes based Jenkins build agents.
 

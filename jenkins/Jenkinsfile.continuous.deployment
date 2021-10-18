@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+    environment {
+        name = 'keskinkaan/gs-spring-boot-docker'
+        tag = 'latest'
+        containerName = 'gs-spring-boot-docker'
+    }
+    stages {
+        stage('Stop Docker container') {
+            steps {
+                sh 'docker stop ${containerName}'
+            }
+        }
+        stage('Remove old Docker container and image') {
+            steps {
+                sh 'docker rm ${containerName}'
+                sh 'docker rmi ${name}:${tag}'
+            }
+        }
+        stage('Pull latest image from Docker Hub') {
+            steps {
+                sh 'docker pull ${name}:${tag}'
+            }
+        }
+        stage('Run new Docker container') {
+            steps {
+                sh 'docker run -d -p 8080:8080 --name ${containerName} ${name}:${tag}'
+            }
+        }
+    }
+}
