@@ -51,23 +51,23 @@ In order to connect to AWS, Terraform or Ansible has to successfully authenticat
 
 Login to AWS Console, in the services, go to IAM and perform the following steps.
 
-<img src=".\images\amazon-aws-iam-1.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-iam-1.png" style="width:100%; height:100%;"/>
 
 1. Add new user and key in the User Name:
 
-<img src=".\images\amazon-aws-add-user-1.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-add-user-1.png" style="width:75%; height:75%;"/>
 
 2. Attach Existing Policies and Select Admin:
 
-<img src=".\images\amazon-aws-add-user-2.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-add-user-2.png" style="width:75%; height:75%;"/>
 
-<img src=".\images\amazon-aws-add-user-3.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-add-user-3.png" style="width:75%; height:75%;"/>
 
 Let the Values be Default Click Next till you see the following Screen.
 
 3. Completion and Download
 
-<img src=".\images\amazon-aws-add-user-4.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-add-user-4.png" style="width:75%; height:75%;"/>
 
 **Note this information:**
 
@@ -90,11 +90,11 @@ A key pair, consisting of a public key and a private key, is a set of security c
 
 Create Key pairs named "myseckey" on the AWS Web Console:
 
-<img src=".\images\amazon-aws-key-pair-create.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-key-pair-create.png" style="width:75%; height:75%;"/>
 
 The private key file is automatically downloaded by your browser. The base file name is the name that you specified as the name of your key pair, and the file name extension is determined by the file format that you chose. Save the private key file in a safe place.
 
-<img src=".\images\amazon-aws-key-pairs.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-key-pairs.png" style="width:100%; height:100%;"/>
 
 ## Terraform AWS : Using Terraform to Create EC2 Instances
 
@@ -124,7 +124,7 @@ https://learn.hashicorp.com/tutorials/terraform/install-cli
 
 Now Let me proceed further with an assumption that you have installed the Terraform CLI.
 
-<img src=".\images\terraform-version.png" style="width:75%; height: 75%;"/>
+<img src=".\images\terraform-version.png" style="width:75%; height:75%;"/>
 
 ### Terraform Configuration File
 
@@ -221,7 +221,7 @@ Once we have saved the File in the newly created directory, we need to initializ
 $ terraform init
 ```
 
-<img src=".\images\terraform-init.png" style="width:75%; height: 75%;"/>
+<img src=".\images\terraform-init.png" style="width:75%; height:75%;"/>
 
 **Step3: Pre-Validate the change – A pilot run**
 
@@ -229,7 +229,7 @@ Once the Initialization completed, you can execute the '**terraform plan**' comm
 
 Execute the '**terraform plan**' command and it would present some detailed info on what changes are going to be made into your AWS infra.
 
-<img src=".\images\terraform-plan.png" style="width:75%; height: 75%;"/>
+<img src=".\images\terraform-plan.png" style="width:75%; height:75%;"/>
 
 the **-out tfplan** is to save the result given by plan so that we can refer it later and apply it as it is without any modification.
 
@@ -257,17 +257,17 @@ Since we have saved the plan output to a file named **tfplan** to guarantee the 
 $ terraform apply "tfplan"
 ```
 
-<img src=".\images\terraform-apply.png" style="width:75%; height: 75%;"/>
+<img src=".\images\terraform-apply.png" style="width:75%; height:75%;"/>
 
 So we have successfully created an EC2 instance and a Security Group and logged into the server.
 
 You can see newly created EC2 instance on AWS web console with all properties defined in '**main.tf**' file.
 
-<img src=".\images\amazon-aws-ec2-terraform-apply.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-ec2-terraform-apply.png" style="width:100%; height:100%;"/>
 
-<img src=".\images\amazon-aws-volumes-terraform-apply.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-volumes-terraform-apply.png" style="width:100%; height:100%;"/>
 
-<img src=".\images\amazon-aws-security-groups-terraform-apply.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-security-groups-terraform-apply.png" style="width:100%; height:100%;"/>
 
 You can destroy the created resources by executing '**terraform destroy**' command.
 
@@ -283,7 +283,7 @@ Customers who use Ansible playbooks typically deploy periodic changes manually. 
 
  I am assuming that you are using a modern version of Linux like Ubuntu or Centos. You need to have the latest version of Ansible installed.
 
-<img src=".\images\ansible-version.png" style="width:75%; height: 75%;"/>
+<img src=".\images\ansible-version.png" style="width:75%; height:75%;"/>
 
 You can build almost any sort of environment of AWS no matter how simple or complex it can get. So, in order not to overwhelm you with so much information, we’ll create one EC2 instance from scratch. 
 
@@ -313,7 +313,7 @@ aws_secret_key: W2YY----KtHRj------------QvHgGUa----tqDU
 
 Once you save the file, all the content will be encrypted. Let’s check that:
 
-<img src=".\images\ansible-vault-create.png" style="width:75%; height: 75%;"/>
+<img src=".\images\ansible-vault-create.png" style="width:75%; height:75%;"/>
 
 ### Setting up the hosts file
 
@@ -423,7 +423,7 @@ The rules_engress controls the network traffic leaving your instance to the outs
 
 After running this Ansible Playbook you can check Security Group's Inbound rules from AWS Web Console:
 
-<img src=".\images\amazon-aws-security-group-inbound-rules.png" style="width:75%; height: 75%;"/>
+<img src=".\images\amazon-aws-security-group-inbound-rules.png" style="width:75%; height:75%;"/>
 
 **Creating and launching the EC2 instance:**
 
@@ -546,11 +546,11 @@ Now, we’re ready to run the playbook by issuing the following command:
 $ ansible-playbook -i hosts --ask-vault-pass aws_provisioning.yml
 ```
 
-<img src=".\images\ansible-playbook-aws-provisioning.png" style="width:100%; height: 100%;"/>
+<img src=".\images\ansible-playbook-aws-provisioning.png" style="width:100%; height:100%;"/>
 
 After the playbook finishes running successfully, you can check your AWS console for a new EC2 instance created and assigned the correct security group.
 
-<img src=".\images\amazon-aws-ansible-playbook-provisioning.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-ansible-playbook-provisioning.png" style="width:100%; height:100%;"/>
 
 **Test Drive:**
 
@@ -562,7 +562,7 @@ You can ping created EC2 instance with Ansible ping module:
 $ ansible webservers -i hosts -m ping -u ubuntu
 ```
 
-<img src=".\images\ansible-ping-webservers.png" style="width:75%; height: 75%;"/>
+<img src=".\images\ansible-ping-webservers.png" style="width:75%; height:75%;"/>
 
 We will install Apache2 as a service with given playbook:
 
@@ -593,11 +593,11 @@ We will install Apache2 as a service with given playbook:
 $ ansible-playbook -i hosts ansible_ubuntu_apache_install.yml
 ```
 
-<img src=".\images\ansible-playbook-aws-apache-deploy.png" style="width:100%; height: 100%;"/>
+<img src=".\images\ansible-playbook-aws-apache-deploy.png" style="width:100%; height:100%;"/>
 
 Further, you can fire up your browser and naviagate to http://ec2-ip, you should see the default Ubuntu page, where ec2-ip is the public IP address that got assigned to your instance by AWS.
 
-<img src=".\images\apache2-default-page.png" style="width:100%; height: 100%;"/>
+<img src=".\images\apache2-default-page.png" style="width:100%; height:100%;"/>
 
 **Terminating the instance:**
 
@@ -646,11 +646,11 @@ The playbook starts with declaring the required variables that will be used thro
 $ ansible-playbook -i hosts --ask-vault-pass aws_ec2_down.yml
 ```
 
-<img src=".\images\ansible-playbook-ec2-down.png" style="width:100%; height: 100%;"/>
+<img src=".\images\ansible-playbook-ec2-down.png" style="width:100%; height:100%;"/>
 
 You can see terminated EC2 instances on AWS web console:
 
-<img src=".\images\amazon-aws-instances-ansible-playbook-down.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-instances-ansible-playbook-down.png" style="width:100%; height:100%;"/>
 
 ## Jenkins: Deploy Jenkins with Docker and Ansible
 
@@ -697,11 +697,11 @@ Use Ansible’s apt module to install the Docker engine as a system service:
 $ ansible-playbook -i hosts ansible_ubuntu_docker_install.yml
 ```
 
-<img src=".\images\ansible-ubuntu-docker-install.png" style="width:100%; height: 100%;"/>
+<img src=".\images\ansible-ubuntu-docker-install.png" style="width:100%; height:100%;"/>
 
 We can also check status of the Docker service directly from the created EC2 instance:
 
-<img src=".\images\amazon-aws-ec2-console-docker-service.png" style="width:100%; height: 100%;"/>
+<img src=".\images\amazon-aws-ec2-console-docker-service.png" style="width:100%; height:100%;"/>
 
 ### Jenkins Multi-Node Architecture
 
@@ -709,13 +709,13 @@ A Jenkins master comes with the basic installation of Jenkins, and in this confi
 
 If you are working on multiple projects, you may run multiple jobs on each project. Some projects need to run on some nodes, and in this process, we need to configure slaves. Jenkins slaves connect to the Jenkins master using the Java Network Launch Protocol.
 
-<img src=".\images\Jenkins-multi-node-architecture.jpg" style="width:50%; height: 50%;"/>
+<img src=".\images\Jenkins-multi-node-architecture.jpg" style="width:50%; height:50%;"/>
 
 The Jenkins master acts to schedule the jobs, assign slaves, and send builds to slaves to execute the jobs.
 
 It will also monitor the slave state (offline or online) and get back the build result responses from slaves and the display build results on the console output. The workload of building jobs is delegated to multiple slaves.
 
-### Jenkins Master Node with Ansible
+### Setup Docker Container as Jenkins Master Node with Ansible
 
 Bitnami Docker Image for Jenkins will install application files to **/bitnami/jenkins** within the container, and this directory needs to be available outside the container, so use the Docker -v option to map the volume to, say, **/share/jenkins** on the host:
 
@@ -785,18 +785,18 @@ Ansible **docker_container** Module Documentation: https://docs.ansible.com/ansi
 
 ```shell
 $ ansible-galaxy collection install community.docker
-$ ansible-playbook -i hosts ansible_jenkins_container.yml
+$ ansible-playbook -i hosts ansible_jenkins_master_container.yml
 ```
 
-<img src=".\images\ansible-jenkins-master-container.png" style="width:100%; height: 100%;"/>
+<img src=".\images\ansible-jenkins-master-container.png" style="width:100%; height:100%;"/>
 
 Further, you can fire up your browser and naviagate to http://ec2-ip:8080, you should see the Jenkins homepage, where ec2-ip is the public IP address that got assigned to your instance by AWS.
 
-<img src=".\images\jenkins-initial-preparing.png" style="width:50%; height: 50%;"/>
+<img src=".\images\jenkins-initial-preparing.png" style="width:50%; height:50%;"/>
 
-<img src=".\images\jenkins-login-screen.png" style="width:50%; height: 50%;"/>
+<img src=".\images\jenkins-login-screen.png" style="width:50%; height:50%;"/>
 
-<img src=".\images\jenkins-homepage.png" style="width:100%; height: 100%;"/>
+<img src=".\images\jenkins-homepage.png" style="width:100%; height:100%;"/>
 
 ### Configure Jenkins Master and Slave Nodes
 
@@ -805,34 +805,275 @@ As a first step, we will configure agents communication port as 50000.
 
 Find the **Configure Global Security** section on the **Manage Jenkins** page which is located in the left corner on the Jenkins dashboard.
 
-<img src=".\images\jenkins-manage-security.png" style="width:100%; height: 100%;"/>
+<img src=".\images\jenkins-manage-security.png" style="width:100%; height:100%;"/>
 
 In this page scroll down to **Agents** section and set **TCP port for inbound agents** as **Fixed** with **50000** port.
 
-<img src=".\images\jenkins-manage-security-agents.png" style="width:50%; height: 50%;"/>
+<img src=".\images\jenkins-manage-security-agents.png" style="width:50%; height:50%;"/>
 
 Find the **Manage Nodes and Clouds** section on the **Manage Jenkins** page which is located in the left corner of the Jenkins dashboard.
 
-<img src=".\images\jenkins-manage-system-configuration.png" style="width:100%; height: 100%;"/>
+<img src=".\images\jenkins-manage-system-configuration.png" style="width:100%; height:100%;"/>
 
-<img src=".\images\jenkins-nodes-page-master-only.png" style="width:100%; height: 100%;"/>
+<img src=".\images\jenkins-nodes-page-master-only.png" style="width:100%; height:100%;"/>
 
 Change **master** node configuration for controlled usage. 
 Select "**Only build jobs with label expressions matching this node**" option and define **master** as label.
 
-<img src=".\images\jenkins-manage-nodes-master-configuration.png" style="width:50%; height: 50%;"/>
+<img src=".\images\jenkins-manage-nodes-master-configuration.png" style="width:50%; height:50%;"/>
 
 Then, select **New Node** which is located in the left corner of the **Manage Nodes and Clouds** page.
 Enter the name of the node in the **Node name** field, and then select **Permanent Agent**. 
 Initially, you will get only one option, “**Permanent Agent**”. 
 Once you have one or more slaves you will get the “**Copy Existing Node**” option.
 
-<img src=".\images\jenkins-manage-nodes-slave-name.png" style="width:100%; height: 100%;"/>
+<img src=".\images\jenkins-manage-nodes-slave-name.png" style="width:100%; height:100%;"/>
 
-Provide name, number of executors, root directory path, label, usage, and launch method, as
+Fill name, number of executors, root directory path, label, usage, and launch method, as
 given below:
 
-<img src=".\images\jenkins-manage-nodes-slave-configuration.png" style="width:50%; height: 50%;"/>
+- Name: slave-node-1
+- Number of executors: 1
+- Remote root directory: /home/jenkins/agent
+- Labels: slave
+- Launch method : Launch agent by connecting it to master
+- Custom WorkDir path: /home/jenkins/agent
+- Use WebSocket
 
+<img src=".\images\jenkins-manage-nodes-slave-configuration.png" style="width:50%; height:50%;"/>
 
+Create two more slave nodes to build multi-node architecture. Once all the initial configurations are complete, you can see all of them, master and slave nodes, in the node list.
 
+<img src=".\images\jenkins-manage-nodes-slaves-create.png" style="width:75%; height:75%;"/>
+
+Click on each slave node in the list, and note connection information for future use.
+
+<img src=".\images\jenkins-manage-node-slave-node-1-info.png" style="width:75%; height:75%;"/>
+
+### Docker Image as Jenkins Build Agent
+
+In this step, we will create custom Docker image as an inbound Jenkins build agent. 
+This Docker image will be using TCP or WebSocket to establish inbound connection to the Jenkins master.
+
+"**Docker image for inbound Jenkins agents**" will be our base image.
+You can find more information on GitHub page and Docker Hub page.
+
+GitHub - Docker image for inbound Jenkins agents: https://github.com/jenkinsci/docker-inbound-agent
+
+DockerHub - Docker image for inbound Jenkins agents: https://hub.docker.com/r/jenkins/inbound-agent
+
+This image will contain several development and build environment for our custom usage: Java Development Kit 8, Python 3, NodeJs 14, Maven 3.8, etc.
+
+```Dockerfile
+FROM jenkins/inbound-agent:4.11-1-jdk8
+
+USER root
+
+# To make it easier for build and release pipelines to run apt-get,
+# configure apt to not require confirmation (assume the -y argument by default)
+ENV DEBIAN_FRONTEND=noninteractive
+RUN echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+
+# Update and Upgrade Debian Buster 10
+RUN apt-get update \
+  && apt-get upgrade -y --no-install-recommends 
+
+# Install Required Dependencies
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+        apt-transport-https \
+        ca-certificates \
+        curl \
+        gnupg-agent \
+        jq \
+        iputils-ping \
+        netcat \
+        wget \
+        unzip \
+        tree \
+        vim \
+        git
+
+# GCC and CPP Installations
+RUN apt-get install -y --no-install-recommends \
+        build-essential \
+        software-properties-common \
+        libc6-dev \
+        gcc \
+        g++\
+        cpp \
+        dpkg-dev \
+        make \
+        cmake
+
+# Python3 Installations
+RUN apt-get install -y --no-install-recommends \
+        python3 \
+        python3-dev \
+        python3-pip \
+        virtualenv \
+        libssl-dev \
+        libffi-dev 
+
+# Python3 Flask Installation
+RUN pip3 install flask 
+
+# NodeJS 14 LTS Installation
+WORKDIR /home/jenkins/nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends nodejs
+
+# Maven 3.8.3 Installation
+RUN apt-get install -y --no-install-recommends maven
+WORKDIR /home/jenkins/maven
+RUN wget https://dlcdn.apache.org/maven/maven-3/3.8.3/binaries/apache-maven-3.8.3-bin.tar.gz
+RUN tar -xvzf apache-maven-3.8.3-bin.tar.gz \
+  && mv apache-maven-3.8.3 maven \
+  && mv /usr/share/maven /usr/share/maven-old \ 
+  && mv maven /usr/share/
+RUN rm -rf /home/jenkins/maven/apache-maven-3.8.3-bin.tar.gz
+
+# Install Docker CLI on Debian
+# Add Docker’s official GPG key:
+RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# Use the following command to set up the stable repository.
+RUN echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian \
+  $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+# Update the apt package index, and install the latest version of Docker Engine and containerd, or go to the next step to install a specific version:
+RUN apt-get update && apt-get install -y docker-ce-cli
+
+# Cleanup Debian Environment
+RUN rm -rf /var/lib/apt/lists/*
+RUN apt-get autoremove -y && apt-get autoclean -y && apt-get clean -y
+
+# Jenkins Agent Starting
+USER jenkins
+
+ENTRYPOINT ["/usr/local/bin/jenkins-agent"]
+```
+
+Build this Dockerfile with custom tag in your workstation:
+
+```shell
+$ docker build -f Dockerfile.jenkins.agent -t jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3 .
+```
+
+<img src=".\images\docker-build-jenkins-agent.png" style="width:100%; height:100%;"/>
+
+After the build operation, control newly created Docker image in the local registry:
+
+```shell
+$ docker image ls
+```
+
+Docker Hub repositories allow you share container images with your team, customers, or the Docker community at large.
+
+<img src=".\images\dockerhub-homepage.png" style="width:100%; height:100%;"/>
+
+Docker images are pushed to Docker Hub through the **docker push** command. 
+A single Docker Hub repository can hold many Docker images (stored as tags).
+
+To push an image to Docker Hub, you must first name your local image using your Docker Hub username and the repository name that you created through Docker Hub on the web.
+
+You can add multiple images to a repository by adding a specific tag to them (for example docs/base:testing). If it’s not specified, the tag defaults to latest.
+
+Name this local image with re-tagging an existing local image:
+
+```shell
+$ docker tag jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3 keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3
+```
+
+<img src=".\images\docker-image-ls.png" style="width:75%; height:75%;"/>
+
+Custom created Docker image will be used by our EC2 instances, and it must be easly downloadable from AWS EC2 instance. We need to push this Docker image to our Docker Hub registry or private one.
+
+First of all, your workstation must be logged in to the DockerHub:
+
+```shell
+$ docker login
+```
+
+<img src=".\images\docker-login.png" style="width:75%; height:75%;"/>
+
+Then, to push and pull this Docker image easily, I'm going to use my personal DockerHub account. 
+
+```shell
+$ docker push keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3
+```
+
+<img src=".\images\docker-push-jenkins-agent.png" style="width:75%; height:75%;"/>
+
+After the push operation, you can directly see pushed Docker image in your DockerHub profile:
+
+<img src=".\images\dockerhub-keskinkaan-repositories.png" style="width:100%; height:100%;"/>
+
+### Setup Docker Container as Jenkins Slave Node with Ansible
+
+As a first step, we need to create three more EC2 instance as Jenkins slave nodes.
+Use same Ansible Playbooks (EC2 provisioning and Docker installation) used for Jenkins Master to provision EC2 instances.
+After three more EC2 instance created, you will see 4 instances in your AWS web console.
+
+<img src=".\images\amazon-aws-instances-jenkins.png" style="width:100%; height:100%;"/>
+
+Use noted connection information in the Jenkins Slave Node creation section in this Ansible Playbook.
+
+Change given sections for each slave node:
+- JENKINS_URL
+- JENKINS_SECRET
+- JENKINS_AGENT_NAME
+
+```yaml
+- name: Run Jenkins Slave Container
+  become: yes
+  gather_facts: yes
+  hosts: jenkinsslave1
+  remote_user: ubuntu
+  tasks:
+  - name: Pull Custom Jenkins Build Agent Docker image
+    community.docker.docker_image:
+      name: "keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3"
+      source: 'pull'
+      state: present
+      timeout: 120
+  - name: Create a container from the Custom Jenkins Build Agent Docker image
+    community.docker.docker_container:
+      auto_remove: no
+      container_default_behavior: 'compatibility'
+      env:
+        JENKINS_URL: 'http://18.234.66.192:8080'
+        JENKINS_SECRET: b4f0c5224b22c4e57899827f750a313495120450238124cebb23b2043c0b6cc0
+        JENKINS_AGENT_NAME: 'slave-node-1'
+        JENKINS_AGENT_WORKDIR: '/home/jenkins/agent'
+        JENKINS_WEB_SOCKET: 'true'
+        MAVEN_HOME: '/usr/share/maven'
+      exposed_ports:
+        - '8080'
+        - '8443'
+        - '50000'
+      hostname: 'jenkins2-slave-1'
+      image: 'keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3'
+      keep_volumes: yes
+      name: 'jenkins2-slave-1'
+      publish_all_ports: yes
+      published_ports:
+        - "8080:8080"
+        - "8443:8443"
+        - "50000:50000"
+      pull: yes
+      restart_policy: 'unless-stopped'
+      state: started
+      volumes:
+        - '/var/run/docker.sock:/var/run/docker.sock'
+```
+
+Execute ansible-playbook command to run the Jenkins Build Agent.
+
+```shell
+$ ansible-playbook -i hosts ansible_jenkins_slave_container.yml
+```
+
+Once all the containers up and connected, you can see all of them, master and slave nodes, in the node list.
+
+<img src=".\images\jenkins-manage-nodes-all-connected.png" style="width:75%; height:75%;"/>

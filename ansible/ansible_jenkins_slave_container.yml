@@ -1,0 +1,44 @@
+
+---
+- name: Run Jenkins Slave Container
+  become: yes
+  gather_facts: yes
+  hosts: jenkinsslave3
+  remote_user: ubuntu
+  tasks:
+  - name: Pull Custom Jenkins Build Agent Docker image
+    community.docker.docker_image:
+      name: "keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3"
+      source: 'pull'
+      state: present
+      timeout: 120
+  - name: Create a container from the Custom Jenkins Build Agent Docker image
+    community.docker.docker_container:
+      auto_remove: no
+      container_default_behavior: 'compatibility'
+      env:
+        JENKINS_URL: 'http://18.234.66.192:8080'
+        JENKINS_SECRET: 'dca348c283ed6a6f598e7e6300f2ece71aaba814f665c33182a6439be6d55d96'
+        JENKINS_AGENT_NAME: 'slave-node-3'
+        JENKINS_AGENT_WORKDIR: '/home/jenkins/agent'
+        JENKINS_WEB_SOCKET: 'true'
+        MAVEN_HOME: '/usr/share/maven'
+      exposed_ports:
+        - '8080'
+        - '8443'
+        - '50000'
+      hostname: 'jenkins2-slave-3'
+      image: 'keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3'
+      keep_volumes: yes
+      name: 'jenkins2-slave-3'
+      publish_all_ports: yes
+      published_ports:
+        - "8080:8080"
+        - "8443:8443"
+        - "50000:50000"
+      pull: yes
+      restart_policy: 'unless-stopped'
+      state: started
+      volumes:
+        - '/var/run/docker.sock:/var/run/docker.sock'
+  

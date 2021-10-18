@@ -3,7 +3,7 @@
 - name: Install Docker
   become: yes
   gather_facts: yes
-  hosts: webservers
+  hosts: jenkinsslave
   remote_user: ubuntu
   tasks:
     - name: Update System
@@ -27,4 +27,4 @@
     - name: Apply Executable Permissions to Docker-Compose Binary
       raw: 'sudo chmod +x /usr/local/bin/docker-compose'
     - name: Add your user to the docker group
-      raw: 'sudo usermod -aG docker $USER' 
+      raw: 'sudo usermod -aG docker ubuntu' 

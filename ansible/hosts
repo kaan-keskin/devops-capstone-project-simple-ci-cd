@@ -1,5 +1,22 @@
 [local]
 localhost
 
-[webservers]
-54.243.25.218
+[jenkinsmaster]
+18.234.66.192
+
+[jenkinsslave]
+3.80.125.147
+54.227.48.222
+54.209.51.242
+
+[jenkinsslave1]
+3.80.125.147
+
+[jenkinsslave2]
+54.227.48.222
+
+[jenkinsslave3]
+54.209.51.242
+
+[webserver]
+54.196.138.102
