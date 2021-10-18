@@ -1251,8 +1251,7 @@ pipeline {
         }
 	 	stage('Execute Maven Package (Build and Test Steps Included)') {
         	steps {
-				sh 'cd ./springboot'
-            	sh 'mvn package'             
+            	sh 'mvn -f ./springboot/pom.xml clean package'             
           	}
 			post{
                 success {
@@ -1272,7 +1271,7 @@ pipeline {
                 }
             }
         	steps {              
-            	sh 'docker build -t keskinkaan/gs-spring-boot-docker:latest -f Dockerfile .' 
+            	sh 'docker build -t keskinkaan/gs-spring-boot-docker:latest -f ./springboot/Dockerfile .' 
         	}
         }
   		stage('Publish image to Docker Hub') {
