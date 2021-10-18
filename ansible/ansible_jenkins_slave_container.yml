@@ -27,10 +27,10 @@
         - '8080'
         - '8443'
         - '50000'
-      hostname: 'jenkins2-slave-3'
+      hostname: 'jenkins2-slave'
       image: 'keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3'
       keep_volumes: yes
-      name: 'jenkins2-slave-3'
+      name: 'jenkins2-slave'
       publish_all_ports: yes
       published_ports:
         - "8080:8080"

@@ -1052,10 +1052,10 @@ Change given sections for each slave node:
         - '8080'
         - '8443'
         - '50000'
-      hostname: 'jenkins2-slave-1'
+      hostname: 'jenkins2-slave'
       image: 'keskinkaan/jenkins-custom-inbound-agent:jdk8-py3-njs14-mvn3'
       keep_volumes: yes
-      name: 'jenkins2-slave-1'
+      name: 'jenkins2-slave'
       publish_all_ports: yes
       published_ports:
         - "8080:8080"
@@ -1076,4 +1076,4 @@ $ ansible-playbook -i hosts ansible_jenkins_slave_container.yml
 
 Once all the containers up and connected, you can see all of them, master and slave nodes, in the node list.
 
-<img src=".\images\jenkins-manage-nodes-all-connected.png" style="width:75%; height:75%;"/>
+<img src=".\images\jenkins-manage-nodes-all-connected.png" style="width:100%; height:100%;"/>
