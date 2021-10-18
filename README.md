@@ -686,6 +686,8 @@ Use Ansible’s apt module to install the Docker engine as a system service:
   gather_facts: yes
   hosts: allinstances
   remote_user: ubuntu
+  vars_files:
+    - dockerhub_keys.yml
   tasks:
     - name: Update System
       raw: 'sudo apt-get update'
@@ -693,6 +695,14 @@ Use Ansible’s apt module to install the Docker engine as a system service:
       raw: 'sudo apt-get -y install python3-pip python3 apt-transport-https ca-certificates curl gnupg lsb-release'
     - name: Add Docker Group
       group: name=docker state=present
+    - name: Add Ubuntu User
+      user: name=ubuntu state=present
+    - name: Add your ubuntu user to the docker group
+      raw: 'sudo usermod -aG docker ubuntu'
+    - name: Add Jenkins User
+      user: name=jenkins state=present
+    - name: Add your jenkins user to the docker group
+      raw: 'sudo usermod -aG docker jenkins'
     - name: Add Docker Signing Key
       raw: 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
     - name: Add Docker Repo
@@ -707,8 +717,10 @@ Use Ansible’s apt module to install the Docker engine as a system service:
       raw: 'sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose' 
     - name: Apply Executable Permissions to Docker-Compose Binary
       raw: 'sudo chmod +x /usr/local/bin/docker-compose'
-    - name: Add your user to the docker group
-      raw: 'sudo usermod -aG docker ubuntu' 
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        username: "{{ dockerhub_username }}"
+        password: "{{ dockerhub_password }}"
 ```
 
 Ansible **docker_login** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_login_module.html
