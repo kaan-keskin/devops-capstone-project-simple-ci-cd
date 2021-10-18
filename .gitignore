@@ -9,3 +9,7 @@ tfplan
 # Ansible
 aws_keys.yml
 myseckey.pem
+dockerhub_keys.yml
+
+# Java
+target/

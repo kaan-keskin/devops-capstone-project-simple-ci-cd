@@ -1,0 +1,60 @@
+pipeline {  
+	agent any
+ 	environment {		
+    	name = 'keskinkaan/gs-spring-boot-docker'
+    	tag = 'latest'       
+    	containerName = 'gs-spring-boot-docker'
+		deploy = false	
+	}
+ 	stages {
+		stage('GitHub Checkout') {
+        	steps {             
+				git branch: 'main', url: 'https://github.com/kaan-keskin/devops-capstone-project-simple-ci-cd'            
+          	}
+        }
+	 	stage('Execute Maven Package (Build and Test Steps Included)') {
+        	steps {
+				sh 'cd ./springboot'
+            	sh 'mvn package'             
+          	}
+			post{
+                success {
+                    script {
+                        env.deploy = true
+                    }
+                }
+                failure {
+                    echo "[ERROR] Build error occured!"
+                }
+            }
+        }
+  		stage('Docker Build and Tag') {
+	   		when {
+            	expression {
+                	return env.deploy
+                }
+            }
+        	steps {              
+            	sh 'docker build -t keskinkaan/gs-spring-boot-docker:latest -f Dockerfile .' 
+        	}
+        }
+  		stage('Publish image to Docker Hub') {
+        	when {
+                expression {
+                    return env.deploy
+                }
+            }
+            steps {
+				sh 'docker push keskinkaan/gs-spring-boot-docker:latest'                  
+          	}
+        }
+    }
+   	post {
+        success {
+            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+        }
+        failure {
+            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+        }
+    }
+}

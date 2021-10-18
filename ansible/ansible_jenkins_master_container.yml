@@ -3,7 +3,7 @@
 - name: Run Jenkins Master Container
   become: yes
   gather_facts: yes
-  hosts: webservers
+  hosts: jenkinsmaster
   remote_user: ubuntu
   tasks:
   - name: Ensure Jenkins directory on Docker host

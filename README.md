@@ -296,7 +296,7 @@ Then, using Ansible, we’ll create a playbook that will:
 
 Another playbook will be used to shut down or destroy the environment.
 
-### Storing your keys in Ansible vault
+### Storing your AWS User Credentials in Ansible Vault
 
 We’ll need to store the AWS keys. Since they are sensitive data, we should use Ansible vault for this:
 
@@ -658,6 +658,24 @@ In the world of CI/CD, Jenkins is a popular tool for provisioning development/pr
 
 To overcome this limitation, Ansible plays an integral part as a shell script executor, which enables Jenkins to execute the workflow of a process.
 
+Docker is a Linux container management toolkit, letting users publish container images and consume those published by others. A Docker image is a recipe for running a containerized process.
+
+### Storing your DockerHub User Credentials in Ansible Vault
+
+We’ll need to store the DockerHub login credentials for future usage. 
+Since they are sensitive data, we should use Ansible vault for this:
+
+```shell
+$ ansible-vault create dockerhub_keys.yml
+```
+
+Once open, add the following to it:
+
+```shell
+dockerhub_username: keskinkaan
+dockerhub_password: ****************
+```
+
 ### Install Docker with Ansible
 
 Use Ansible’s apt module to install the Docker engine as a system service:
@@ -666,7 +684,7 @@ Use Ansible’s apt module to install the Docker engine as a system service:
 - name: Install Docker
   become: yes
   gather_facts: yes
-  hosts: webservers
+  hosts: allinstances
   remote_user: ubuntu
   tasks:
     - name: Update System
@@ -690,11 +708,14 @@ Use Ansible’s apt module to install the Docker engine as a system service:
     - name: Apply Executable Permissions to Docker-Compose Binary
       raw: 'sudo chmod +x /usr/local/bin/docker-compose'
     - name: Add your user to the docker group
-      raw: 'sudo usermod -aG docker $USER' 
+      raw: 'sudo usermod -aG docker ubuntu' 
 ```
 
+Ansible **docker_login** Module Documentation: https://docs.ansible.com/ansible/latest/collections/community/docker/docker_login_module.html
+
 ```shell
-$ ansible-playbook -i hosts ansible_ubuntu_docker_install.yml
+$ ansible-galaxy collection install community.docker
+$ ansible-playbook -i hosts --ask-vault-pass ansible_ubuntu_docker_install.yml
 ```
 
 <img src=".\images\ansible-ubuntu-docker-install.png" style="width:100%; height:100%;"/>
@@ -723,7 +744,7 @@ Bitnami Docker Image for Jenkins will install application files to **/bitnami/je
 - name: Run Jenkins Master Container
   become: yes
   gather_facts: yes
-  hosts: webservers
+  hosts: jenkinsmaster
   remote_user: ubuntu
   tasks:
   - name: Ensure Jenkins directory on Docker host
@@ -1077,3 +1098,213 @@ $ ansible-playbook -i hosts ansible_jenkins_slave_container.yml
 Once all the containers up and connected, you can see all of them, master and slave nodes, in the node list.
 
 <img src=".\images\jenkins-manage-nodes-all-connected.png" style="width:100%; height:100%;"/>
+
+## Spring Boot Application with Maven and Docker
+
+In this part, we will build a Docker image for running a Spring Boot application. 
+We will going to use offical Spring Boot guide for this project. You can find source ode and more information ,n the GitHub repository.
+
+Spring Boot with Docker GitHub: https://github.com/spring-guides/gs-spring-boot-docker
+
+Maven's pom.xml for this simple application:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.5.2</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example</groupId>
+	<artifactId>spring-boot-docker-complete</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>spring-boot-docker-complete</name>
+	<description>Demo project for Spring Boot</description>
+	<properties>
+		<java.version>1.8</java.version>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>
+```
+
+### Build and Run the Spring Boot Application
+
+We can build this simple Spring Boot application in the development environment:
+
+```shell
+./mvnw package
+```
+
+<img src=".\images\springboot-mvn-package.png" style="width:100%; height:100%;"/>
+
+Now we can run the application without the Docker container (that is, in the host OS):
+
+```shell
+$ java -jar target/spring-boot-docker-complete-0.0.1-SNAPSHOT.jar
+```
+
+<img src=".\images\springboot-demo-run.png" style="width:100%; height:100%;"/>
+
+Then go to **localhost:8080** to see your “Hello Docker World” message.
+
+<img src=".\images\springboot-demo-browser.png" style="width:50%; height:50%;"/>
+
+### Containerize the Spring Boot Application
+
+We start with a basic Dockerfile and make a few tweaks. Then we show a couple of options that use build plugins for Maven instead of Docker.
+
+Docker has a simple "**Dockerfile**" file format that it uses to specify the “layers” of an image. 
+Create the following Dockerfile in your Spring Boot project:
+
+```Dockerfile
+FROM openjdk:8-jdk-alpine
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
+```
+
+You can run it with the following command:
+
+```shell
+$ docker build -t keskinkaan/gs-spring-boot-docker:v1 -f Dockerfile .
+```
+<img src=".\images\docker-springboot-demo-build.png" style="width:75%; height:75%;"/>
+
+You can see the username in the application startup logs when you build and run the application:
+
+```shell
+$ docker run -p 8080:8080 keskinkaan/gs-spring-boot-docker:v1
+```
+<img src=".\images\docker-spring-demo-run.png" style="width:100%; height:100%;"/>
+
+Then go to **localhost:8080** to see your “Hello Docker World” message.
+
+<img src=".\images\springboot-demo-browser.png" style="width:50%; height:50%;"/>
+
+After build operation you can push and pull this Docker image easily, 
+I'm going to use my personal DockerHub account. 
+
+```shell
+$ docker push keskinkaan/gs-spring-boot-docker:v1
+```
+
+<img src=".\images\docker-spring-demo-push.png" style="width:75%; height:75%;"/>
+
+After the push operation, you can directly see pushed Docker image in your DockerHub profile:
+
+<img src=".\images\dockerhub-keskinkaan-repositories-with-spring-demo.png" style="width:100%; height:100%;"/>
+
+### Create Continuous Integration Pipeline on Jenkins
+
+We are going to create our **Continuous Integration (CI) Pipeline** for this simple Spring Boot application.
+Now, create new job named "**spring-boot-demo-ci**" as **Pipeline**:
+
+<img src=".\images\jenkins-job-demo-name.png" style="width:100%; height:100%;"/>
+
+We use simple Continuous Integration pipeline script for our Spring Boot application.
+
+In this pipeline we will implement these steps:
+- GitHub Checkout
+- Execute Maven Package (Build and Test Steps Included)
+- Docker Build and Tag
+- Publish image to Docker Hub
+- Cleanup
+
+```Jenkinsfile
+pipeline {  
+	agent any
+ 	environment {		
+    	name = 'keskinkaan/gs-spring-boot-docker'
+    	tag = 'latest'       
+    	containerName = 'gs-spring-boot-docker'
+		deploy = false	
+	}
+ 	stages {
+		stage('GitHub Checkout') {
+        	steps {             
+				git branch: 'main', url: 'https://github.com/kaan-keskin/devops-capstone-project-simple-ci-cd'            
+          	}
+        }
+	 	stage('Execute Maven Package (Build and Test Steps Included)') {
+        	steps {
+				sh 'cd ./springboot'
+            	sh 'mvn package'             
+          	}
+			post{
+                success {
+                    script {
+                        env.deploy = true
+                    }
+                }
+                failure {
+                    echo "[ERROR] Build error occured!"
+                }
+            }
+        }
+  		stage('Docker Build and Tag') {
+	   		when {
+            	expression {
+                	return env.deploy
+                }
+            }
+        	steps {              
+            	sh 'docker build -t keskinkaan/gs-spring-boot-docker:latest -f Dockerfile .' 
+        	}
+        }
+  		stage('Publish image to Docker Hub') {
+        	when {
+                expression {
+                    return env.deploy
+                }
+            }
+            steps {
+				sh 'docker push keskinkaan/gs-spring-boot-docker:latest'                  
+          	}
+        }
+    }
+   	post {
+        success {
+            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+        }
+        failure {
+            sh "docker rmi -f keskinkaan/gs-spring-boot-docker:latest"
+        }
+    }
+}
+```
+
+In the Jenkins job creation page follow these steps:
+
+- Select **GitHub project**, and fill in the box with "https://github.com/kaan-keskin/devops-capstone-project-simple-ci-cd".
+- Under the **Build Triggers** section select **Poll SCM**, and fill in the box with "**H/15 \* \* \* \***".
+- Under the **Pipeline** section, copy our Jenkins script in the box.
+
+<img src=".\images\jenkins-spring-demo-ci-configuration-1.png" style="width:100%; height:100%;"/>
+
+<img src=".\images\jenkins-spring-demo-ci-configuration-2.png" style="width:100%; height:100%;"/>
+
+

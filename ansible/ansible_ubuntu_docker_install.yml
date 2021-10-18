@@ -3,8 +3,10 @@
 - name: Install Docker
   become: yes
   gather_facts: yes
-  hosts: jenkinsslave
+  hosts: allinstances
   remote_user: ubuntu
+  vars_files:
+    - dockerhub_keys.yml
   tasks:
     - name: Update System
       raw: 'sudo apt-get update'
@@ -27,4 +29,8 @@
     - name: Apply Executable Permissions to Docker-Compose Binary
       raw: 'sudo chmod +x /usr/local/bin/docker-compose'
     - name: Add your user to the docker group
-      raw: 'sudo usermod -aG docker ubuntu' 
+      raw: 'sudo usermod -aG docker ubuntu'
+    - name: Log into DockerHub
+      community.docker.docker_login:
+        username: "{{ dockerhub_username }}"
+        password: "{{ dockerhub_password }}"

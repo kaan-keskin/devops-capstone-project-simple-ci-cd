@@ -17,8 +17,8 @@
       auto_remove: no
       container_default_behavior: 'compatibility'
       env:
-        JENKINS_URL: 'http://18.234.66.192:8080'
-        JENKINS_SECRET: 'dca348c283ed6a6f598e7e6300f2ece71aaba814f665c33182a6439be6d55d96'
+        JENKINS_URL: 'http://54.83.181.124:8080'
+        JENKINS_SECRET: 'b72408828f06a451171952db89cff5af5e384b834126001de0aaa8ea6bf355ff'
         JENKINS_AGENT_NAME: 'slave-node-3'
         JENKINS_AGENT_WORKDIR: '/home/jenkins/agent'
         JENKINS_WEB_SOCKET: 'true'
